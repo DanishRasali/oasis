@@ -1,5 +1,7 @@
 import 'dart:io';
 
+import 'package:path/path.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:oasis/models/assignment.dart';
 import 'package:oasis/models/submission.dart';
@@ -9,6 +11,8 @@ import 'package:oasis/models/teachersubjectclassroom.dart';
 import 'package:oasis/screens/teacherApp/home/subject_view.dart';
 import 'package:oasis/screens/teacherApp/home/submission_view.dart';
 import 'package:oasis/screens/teacherApp/home/updateAssignment_view.dart';
+import 'package:open_file/open_file.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:stacked/stacked.dart';
 import 'package:oasis/screens/shared/appBar.dart';
 import 'package:oasis/screens/shared/textField.dart';
@@ -150,7 +154,8 @@ class _ViewSubmissionViewState extends State<ViewSubmissionView> {
                       ),
                     ),
                     awesomeDivider(0.8, dividerColor),
-                    Container(
+                    InkWell(
+                      child: Container(
                       padding: EdgeInsets.only(
                           top: 15, bottom: 20, left: 15, right: 15),
                       width: screenWidth,
@@ -167,7 +172,7 @@ class _ViewSubmissionViewState extends State<ViewSubmissionView> {
                           SizedBox(height: 5),
                           awesomeTextField(
                             fileController,
-                            'Tap to enter submission file...',
+                            'No submission...',
                             1,
                             10,
                             screenWidth,
@@ -177,6 +182,13 @@ class _ViewSubmissionViewState extends State<ViewSubmissionView> {
                           ),
                         ],
                       ),
+                    ),
+                    onTap: () {
+                        openFile(
+                          url: widget.submission.file.toString(),
+                          fileName: widget.studentName.toString(),
+                        );
+                      },
                     ),
                     awesomeDivider(0.8, dividerColor),
                     Container(
@@ -243,5 +255,35 @@ class _ViewSubmissionViewState extends State<ViewSubmissionView> {
         ),
       ),
     );
+  }
+
+  Future openFile({String url, String fileName}) async {
+    final file = await downloadFile(url, fileName);
+
+    if (file == null) return;
+
+    OpenFile.open(file.path);
+  }
+
+  Future<File> downloadFile(String url, String fileName) async {
+    final appStorage = await getApplicationDocumentsDirectory();
+    final file = File('${appStorage.path}/' + basename(url));
+
+    try {
+      final response = await Dio().get(url,
+          options: Options(
+            responseType: ResponseType.bytes,
+            followRedirects: false,
+            receiveTimeout: 0,
+          ));
+
+      final raf = file.openSync(mode: FileMode.write);
+      raf.writeFromSync(response.data);
+      await raf.close();
+
+      return file;
+    } catch (e) {
+      return null;
+    }
   }
 }

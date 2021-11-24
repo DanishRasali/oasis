@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:path/path.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:oasis/models/assignment.dart';
@@ -227,7 +228,7 @@ class _ViewAssignmentViewState extends State<ViewAssignmentView> {
                             SizedBox(height: 5),
                             awesomeTextField(
                               fileController,
-                              'Tap to enter assignment file...',
+                              'No assignment...',
                               1,
                               10,
                               screenWidth,
@@ -303,7 +304,7 @@ class _ViewAssignmentViewState extends State<ViewAssignmentView> {
 
   Future<File> downloadFile(String url, String fileName) async {
     final appStorage = await getApplicationDocumentsDirectory();
-    final file = File('${appStorage.path}/$fileName');
+    final file = File('${appStorage.path}/' + basename(url));
 
     try {
       final response = await Dio().get(url,
